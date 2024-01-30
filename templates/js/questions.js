@@ -4,7 +4,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const currentURL = urlParams.get('currentURL');
 
     // Make an asynchronous call to your server to get the questions
-    fetch(`https://yourserver.com/generateQuestions`, {
+    fetch(`/generateQuestions`, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
@@ -26,4 +26,6 @@ document.addEventListener('DOMContentLoaded', () => {
 // Function to render questions on the page
 function renderQuestions(questionsData) {
     // Implement the logic to dynamically create and display question elements on the page
+    questionsAsHTML = questionsData; //later we need to parse this to ensure ChatGTP returns the quiz in the correcte format. But for now lets just dump it!
+    document.getElementById('question-placeholder').textContent = questionsAsHTML;
 }
