@@ -1,0 +1,8 @@
+flask_wtf
+flask_session
+readability-lxml
+openai
+python-dotenv
+Flask
+beautifulsoup4
+requests
