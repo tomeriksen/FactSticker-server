@@ -9,12 +9,11 @@
 <body>
     <div id="quiz-container">
         <h1>Test Your Knowledge</h1>
-        <form id="quiz-form">
-            <!-- Questions will be injected here by JavaScript -->
-        </form>
-        <button id="submit-btn" disabled>Submit Answers</button>
+
+            <!-- Questions will be injected here by Flask -->
+            {{ questions |safe}}
     </div>
 
-    <script src="js/questions.js"></script> <!-- Link to your JavaScript file -->
+    <script src="{{ url_for('static', filename='js/questions.js') }}"></script> <!-- Link to your JavaScript file -->
 </body>
 </html>

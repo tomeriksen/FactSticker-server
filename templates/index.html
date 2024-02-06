@@ -4,9 +4,14 @@
     <h1>Fact sticker</h1>
     <p>Paste the web address of something you want Open AI to test you on</p>
     <form action="/questions" method="post">
+        {{ url_form.hidden_tag() }}
+        {{ url_form.url.label }}
+        {{ url_form.url() }}
+        {{ url_form.submit() }}
+<!-- how do we add required?-
     <label for="url">URL:</label>
-    <input type="text" id="url" name="URL" required>
-    <button type="submit">Submit</button>
+    <input type="text" id="url" name="url" required>
+    <button type="submit">Submit</button>-->
 </form>
   </body>
 </html>

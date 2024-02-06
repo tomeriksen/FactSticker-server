@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Answer</title>
+</head>
+<body>
+{% for i in range(questions | length) %}
+<h3>Question {{ i }} </h3>
+    {{ questions[i] | safe }}
+    <h4>Answer: {{ answers[i][1] }}</h4>
+{{ responses[i]['openai_response'] }}
+{% endfor %}
+</body>
+</html>
