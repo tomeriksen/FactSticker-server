@@ -1,7 +1,8 @@
-<!DOCTYPE html>
-<html>
-  <body>
-    <h1>Fact sticker</h1>
+{% extends "base.html" %}
+{% block content %}
+    <section>
+    <div class="container">
+        <h1>Fact sticker</h1>
     <p>Paste the web address of something you want Open AI to test you on</p>
     <form action="/questions" method="post">
         {{ url_form.hidden_tag() }}
@@ -13,5 +14,6 @@
     <input type="text" id="url" name="url" required>
     <button type="submit">Submit</button>-->
 </form>
-  </body>
-</html>
+    </div>
+    </section>
+{%  endblock %}

@@ -13,8 +13,9 @@ def extract_article(url):
 
             # Extracting the inner text of the body tag
             summary = doc.summary()
+            title = doc.title()
 
-            return summary
+            return {'title': title, 'content': summary}
         else:
             return f"Failed to retrieve content, status code: {response.status_code}"
     except Exception as e:

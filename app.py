@@ -6,7 +6,7 @@ import openai
 from dotenv import load_dotenv
 import os
 import urllib.parse
-from openai_response import openai_generate_questions, openai_send_answer, clean_up_questions
+from openai_response import openai_generate_questions, openai_send_answer, split_questions
 
 load_dotenv()  # Load environment variables from .env file
 
@@ -33,9 +33,9 @@ def questions():
     url_form = URLForm(request.form)
     if url_form.validate_on_submit():
         questions  = openai_generate_questions(url_form.url.data)
-        questions = clean_up_questions(questions)
+        question_list = split_questions(questions)
         session['questions'] = questions
-        return render_template("questions.html", questions=questions)
+        return render_template("questions.html", question_list=question_list)
 
 @app.route('/submit_answer', methods=['POST'])
 def submit_answer():
@@ -58,7 +58,7 @@ def submit_answer():
 def fetch_answer():
     if len (request.form) == 1:
         result = openai_send_answer(form_field_name(0), form_field_value(0))
-        return result["openai_response"]
+        return result
 
 @app.route('/generate-questions-from-url', methods=['POST'])
 def generate_questions_from_url():

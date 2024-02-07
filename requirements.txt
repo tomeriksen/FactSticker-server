@@ -3,6 +3,6 @@ flask_session
 readability-lxml
 openai
 python-dotenv
-Flask
+flask
 beautifulsoup4
 requests

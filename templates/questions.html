@@ -1,19 +1,19 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FactSticker Quiz</title>
-    <link rel="stylesheet" href="styles.css"> <!-- Optional: Link to your CSS file for styling -->
-</head>
-<body>
-    <div id="quiz-container">
-        <h1>Test Your Knowledge</h1>
-
-            <!-- Questions will be injected here by Flask -->
-            {{ questions |safe}}
+{% extends "base.html" %}
+{% block content %}
+    <div class="container" id="quiz-container">
+        <div class ="row">
+                 <h1>Test Your Knowledge</h1>
+        </div>
+        <div class = "row">
+             <!-- Questions will be injected here by Flask -->
+            {% for question in question_list %}
+                <div class="row" id="div_q"div_q{{ loop.index0 }}
+                {{ question |safe}}
+                </div>
+            {% endfor %}
+        </div>
     </div>
 
     <script src="{{ url_for('static', filename='js/questions.js') }}"></script> <!-- Link to your JavaScript file -->
 </body>
-</html>
+{% endblock %}
