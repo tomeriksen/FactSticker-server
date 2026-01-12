@@ -45,11 +45,12 @@ function AddFormListener (id) {
                         // Handle error here
                     }
                 };
+                     // Convert FormData to URL encoded string
+                const payload = new URLSearchParams(data).toString();
+                xhr.send(payload);
             }
 
-            // Convert FormData to URL encoded string
-            const payload = new URLSearchParams(data).toString();
-            xhr.sendc(payload);
+       
             //Kill interaction with other radiobuttons
             disableRadioButtons(name);
             //enable next question button
@@ -83,17 +84,7 @@ function disableNextButton(){}
 function disableBackButton(){}
 
 //make sure the user can't click again
-function disableRadioButtons(whichQuestion){}¨å
-
-
-
-
-
-
-
-
-
-
+function disableRadioButtons(whichQuestion){}
 
 
 

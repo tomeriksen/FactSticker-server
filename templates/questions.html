@@ -7,7 +7,7 @@
         <div class = "row">
              <!-- Questions will be injected here by Flask -->
             {% for question in question_list %}
-                <div class="row" id="div_q"div_q{{ loop.index0 }}
+                <div class="row" id="div_q{{ loop.index0 }}">
                 {{ question |safe}}
                 </div>
             {% endfor %}

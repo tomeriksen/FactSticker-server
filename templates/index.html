@@ -4,6 +4,11 @@
     <div class="container">
         <h1>Fact sticker</h1>
     <p>Paste the web address of something you want Open AI to test you on</p>
+    {% if error %}
+    <div class="alert alert-danger" role="alert">
+        {{ error }}
+    </div>
+    {% endif %}
     <form action="/questions" method="post">
         {{ url_form.hidden_tag() }}
         {{ url_form.url.label }}

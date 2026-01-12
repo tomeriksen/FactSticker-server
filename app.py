@@ -28,31 +28,40 @@ def index():
     url_form = URLForm(request.form)
     print("index")
     return render_template("index.html", url_form=url_form)
-@app.route('/questions', methods=['POST'])
+@app.route('/questions', methods=['GET', 'POST'])
 def questions():
-    url_form = URLForm(request.form)
-    if url_form.validate_on_submit():
-        questions  = openai_generate_questions(url_form.url.data)
-        question_list = split_questions(questions)
-        session['questions'] = questions
-        return render_template("questions.html", question_list=question_list)
+    # Handle GET request with URL parameter
+    if request.method == 'GET':
+        url = request.args.get('url')
+        if not url:
+            return render_template("index.html", url_form=URLForm(), error="Error: No URL provided")
+    else:
+        url_form = URLForm(request.form)
+        if not url_form.validate_on_submit():
+            return render_template("index.html", url_form=url_form)
+        url = url_form.url.data
 
-@app.route('/submit_answer', methods=['POST'])
+    questions = openai_generate_questions(url)
+    if questions.startswith("Error:"):
+        return render_template("index.html", url_form=URLForm(), error=questions)
+    question_list = split_questions(questions)
+    session['questions'] = questions
+    return render_template("questions.html", question_list=question_list)
+
+@app.route('/submit_answer', methods=['GET', 'POST'])
 def submit_answer():
-    def field_name(pos):
-        return list(request.form.items())[pos][0]
-    def field_value(pos):
-        return list(request.form.items())[pos][1]
+    # Get answers from either GET params or POST form
+    if request.method == 'GET':
+        answers = list(request.args.items())
+    else:
+        answers = list(request.form.items())
 
-    if len (request.form) >0:
-        #generate_answer (answers[0][0], answers[0][1])
+    if len(answers) > 0:
         response_list = []
-        question_list = extract_questions_from_form (session['questions'])
-        response_list.append(openai_send_answer(field_name(0), field_value(0)))
-        response_list.append(openai_send_answer(field_name(1), field_value(1)))
-        response_list.append(openai_send_answer(field_name(2), field_value(2)))
-        # eg 'q1', 'c'
-        return render_template("answer.html", responses=response_list, questions=question_list, answers=list(request.form.items()))
+        question_list = extract_questions_from_form(session.get('questions', ''))
+        for q_name, q_value in answers:
+            response_list.append(openai_send_answer(q_name, q_value))
+        return render_template("answer.html", responses=response_list, questions=question_list, answers=answers)
 
 @app.route('/fetch_answer', methods=['POST'])
 def fetch_answer():
@@ -76,6 +85,6 @@ def extract_questions_from_form(form_txt):
     return questions
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(debug=True, port=5001)
 
 

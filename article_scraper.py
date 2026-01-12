@@ -4,7 +4,8 @@ import requests #pip3 install requests
 def extract_article(url):
     try:
         # Sending a request to the URL
-        response = requests.get(url)
+        headers = {'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36'}
+        response = requests.get(url, headers=headers)
 
         # Check if the request was successful
         if response.status_code == 200:

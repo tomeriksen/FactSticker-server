@@ -26,11 +26,7 @@ def main():
     #which_question = input("Name of First answer:")
     answer1 = input("Value of First answer:")
     solution1 = openai_send_answer("q1", answer1)
-    print(f"answer: {solution1.get('openai_response')}")
-    if not solution1["correct_answer"]:
-        print("openai did not formally respond by returning the letter of the correct answer")
-    else:
-        print(f"Correct answer: {solution1['correct_answer']}")
+    print(f"answer: {solution1}")
 
     #which_question = input("Name of 2nd answer:")
     answer2 = input("Value of 2nd answer:")
@@ -55,6 +51,9 @@ def openai_generate_questions(url):#, content = None):
     try:
         if True:#not content:
             article = extract_article(url) #{'title', 'content}
+            if isinstance(article, str):
+                # extract_article returned an error string
+                return f"Error: {article}"
             content = article.get("content")
             title = article.get("title")
             if len(content) > openai_max_request_len-2000:
@@ -90,13 +89,11 @@ def openai_generate_questions(url):#, content = None):
 
 
         response = client.chat.completions.create(
-            model="gpt-4",
+            model="gpt-4o-mini",
             messages= openai_conversation_history,
-            temperature=1,
+            temperature=0.2,
             max_tokens=1065,
-            top_p=1,
-            frequency_penalty=0,
-            presence_penalty=0
+            seed=42
         )
         assistant_response = response.choices[0].message.content
         openai_conversation_history.append({ "role": "assistant", "content": assistant_response}) #add openai's resonse to the conversation history
@@ -172,16 +169,13 @@ def openai_send_answer(which_question, answer):
     client = OpenAI()
     try:
         response = client.chat.completions.create(
-            model="gpt-4",
+            model="gpt-4o-mini",
             messages=openai_conversation_history,
-            temperature=1,
+            temperature=0.2,
             max_tokens=1065,
-            top_p=1,
-            frequency_penalty=0,
-            presence_penalty=0
+            seed=42
         )
         assistant_response = response.choices[0].message.content
-        #split verbal answer from "formal" resonse {"correct_answer": <!--insert correct answer here-->}
         if calculate_length_of_conversation() + len(assistant_response) + 1000 < openai_max_request_len:
             openai_conversation_history.append( {"role": "assistant", "content": assistant_response})  # add openai's resonse to the conversation history
         #else ignore adding asnwer to conversation history
