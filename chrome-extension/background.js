@@ -3,12 +3,24 @@
  *
  * When the user clicks the extension icon, this script:
  * 1. Injects a content script to extract article text from the page
- * 2. Opens the FactSticker quiz in a new tab
- * 3. Passes both URL and content to the quiz page
+ * 2. Stores the content in chrome.storage.local
+ * 3. Opens the FactSticker quiz in a new tab (which reads from storage)
  */
 
 // Server URL - change this if running on a different host/port
 const FACTSTICKER_SERVER = 'http://127.0.0.1:5001';
+
+// Listen for messages from the quiz page requesting article content
+chrome.runtime.onMessageExternal.addListener((message, sender, sendResponse) => {
+    if (message.type === 'GET_ARTICLE') {
+        chrome.storage.local.get('factsticker_article', (result) => {
+            const article = result.factsticker_article || {};
+            console.log('Sending article to quiz page:', article.content?.substring(0, 100));
+            sendResponse(article);
+        });
+        return true; // Keep the message channel open for async response
+    }
+});
 
 // Handle extension icon click
 chrome.action.onClicked.addListener(async (tab) => {
@@ -30,23 +42,21 @@ chrome.action.onClicked.addListener(async (tab) => {
         const articleContent = results[0]?.result || '';
         const articleTitle = tab.title || '';
 
-        // Store content in session storage (too large for URL params)
-        // The quiz page will retrieve it
-        const quizTab = await chrome.tabs.create({
-            url: `${FACTSTICKER_SERVER}/quiz?url=${encodeURIComponent(articleUrl)}`
+        console.log('Extracted content length:', articleContent.length);
+
+        // Store content in chrome.storage.local for the quiz page to retrieve
+        await chrome.storage.local.set({
+            factsticker_article: {
+                url: articleUrl,
+                content: articleContent,
+                title: articleTitle,
+                timestamp: Date.now()
+            }
         });
 
-        // Send the content to the new tab once it's loaded
-        chrome.tabs.onUpdated.addListener(function listener(tabId, changeInfo) {
-            if (tabId === quizTab.id && changeInfo.status === 'complete') {
-                chrome.tabs.sendMessage(tabId, {
-                    type: 'ARTICLE_CONTENT',
-                    content: articleContent,
-                    title: articleTitle,
-                    url: articleUrl
-                });
-                chrome.tabs.onUpdated.removeListener(listener);
-            }
+        // Open the quiz page
+        chrome.tabs.create({
+            url: `${FACTSTICKER_SERVER}/quiz?url=${encodeURIComponent(articleUrl)}&ext=1`
         });
 
     } catch (error) {

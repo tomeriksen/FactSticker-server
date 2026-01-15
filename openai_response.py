@@ -186,6 +186,114 @@ def openai_send_answer(which_question, answer):
         return error_msg
 
 
+# =============================================================================
+# New Quiz API Functions (JSON-based, single question at a time)
+# =============================================================================
+
+def generate_quiz_questions(content, title="", url="", num_questions=3):
+    """
+    Generate quiz questions from article content.
+
+    Returns a list of question objects, each with:
+    {
+        "question": "Question text",
+        "options": {"a": "Option A", "b": "Option B", "c": "Option C"},
+        "correct": "a",
+        "explanations": {
+            "a": "Correct! Explanation...",
+            "b": "Incorrect. Explanation...",
+            "c": "Incorrect. Explanation..."
+        }
+    }
+    """
+    if not content or len(content.strip()) < 100:
+        return {"error": "Article content is too short or empty"}
+
+    # Truncate content if too long
+    max_content_len = 6000
+    if len(content) > max_content_len:
+        content = content[:max_content_len]
+
+    client = OpenAI()
+
+    system_prompt = """You are a quiz generator. Generate quiz questions based on article content.
+You MUST respond with valid JSON only - no markdown, no code blocks, just pure JSON.
+Each question must have exactly 3 options (a, b, c) and explanations for ALL options."""
+
+    user_prompt = f"""Generate {num_questions} multiple-choice quiz questions based on this article.
+
+Article Title: {title}
+Article URL: {url}
+Article Content:
+{content}
+
+Respond with a JSON array of question objects. Each object must have:
+- "question": The question text
+- "options": Object with keys "a", "b", "c" and their answer text
+- "correct": The letter of the correct answer ("a", "b", or "c")
+- "explanations": Object with keys "a", "b", "c" explaining why each is correct or incorrect
+
+Example format:
+[
+  {{
+    "question": "What year was Python created?",
+    "options": {{
+      "a": "1989",
+      "b": "1991",
+      "c": "1995"
+    }},
+    "correct": "b",
+    "explanations": {{
+      "a": "Incorrect. Python development started in 1989, but it wasn't released until 1991.",
+      "b": "Correct! Python 0.9.0 was first released in February 1991.",
+      "c": "Incorrect. By 1995, Python was already at version 1.2."
+    }}
+  }}
+]
+
+Generate exactly {num_questions} questions. Respond ONLY with the JSON array, no other text."""
+
+    try:
+        response = client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_prompt}
+            ],
+            temperature=0.3,
+            max_tokens=2000,
+            seed=42
+        )
+
+        response_text = response.choices[0].message.content.strip()
+
+        # Try to parse JSON, handling potential markdown code blocks
+        if response_text.startswith("```"):
+            # Remove markdown code block
+            lines = response_text.split("\n")
+            response_text = "\n".join(lines[1:-1])
+
+        questions = json.loads(response_text)
+
+        # Validate structure
+        if not isinstance(questions, list):
+            return {"error": "Invalid response format from OpenAI"}
+
+        for q in questions:
+            if not all(key in q for key in ["question", "options", "correct", "explanations"]):
+                return {"error": "Missing required fields in question"}
+
+        return questions
+
+    except json.JSONDecodeError as e:
+        print(f"JSON parse error: {e}")
+        print(f"Response was: {response_text[:500]}")
+        return {"error": f"Failed to parse OpenAI response as JSON: {str(e)}"}
+    except Exception as e:
+        print(f"OpenAI API error: {e}")
+        return {"error": f"OpenAI API error: {str(e)}"}
+
+
 
 #Utility functions for treating openAI output
 from bs4 import BeautifulSoup

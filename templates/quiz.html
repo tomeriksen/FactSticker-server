@@ -297,7 +297,11 @@
     // Article URL passed from Flask (via Chrome Extension or direct link)
     const articleUrl = "{{ article_url | safe }}";
 
-    // Article content - will be populated by Chrome Extension message
+    // Check if opened from extension (ext=1 in URL)
+    const urlParams = new URLSearchParams(window.location.search);
+    const fromExtension = urlParams.get('ext') === '1';
+
+    // Article content - will be populated from Chrome Extension storage
     let articleContent = "";
     let articleTitle = "";
 
@@ -307,29 +311,52 @@
     let score = 0;
     let answered = false;
 
-    // Listen for content from Chrome Extension
-    if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.onMessage) {
-        chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-            if (message.type === 'ARTICLE_CONTENT') {
-                articleContent = message.content;
-                articleTitle = message.title;
-                console.log('Received article content from extension:', articleContent.substring(0, 100) + '...');
-                // Start quiz now that we have the content
-                startQuizWithContent();
-            }
-        });
-    }
-
     // Start quiz on page load
-    document.addEventListener('DOMContentLoaded', () => {
-        // Wait briefly for extension message, then start anyway
-        setTimeout(() => {
-            if (!currentQuestion) {
+    document.addEventListener('DOMContentLoaded', async () => {
+        // If opened from extension, try to get content from chrome.storage
+        if (fromExtension && typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.id) {
+            try {
+                // Request content from extension
+                chrome.runtime.sendMessage(chrome.runtime.id, { type: 'GET_ARTICLE' }, (response) => {
+                    if (response && response.content) {
+                        articleContent = response.content;
+                        articleTitle = response.title || '';
+                        console.log('Got content from extension:', articleContent.substring(0, 100) + '...');
+                    }
+                    startQuizWithContent();
+                });
+            } catch (e) {
+                console.log('Could not get content from extension:', e);
                 startQuizWithContent();
             }
-        }, 500);
+        } else {
+            // Direct access without extension
+            startQuizWithContent();
+        }
     });
 
+    /**
+     * Starts the quiz by sending article data to the server.
+     *
+     * This function initiates the quiz flow by:
+     * 1. Showing the loading indicator
+     * 2. Sending article URL, content, and title to /api/quiz/start
+     * 3. Handling the server response (questions or error)
+     * 4. Displaying the first question on success
+     *
+     * Dependencies (global variables):
+     * - articleUrl: The URL of the article being quizzed (from Flask template)
+     * - articleContent: Article text from Chrome Extension storage (may be empty)
+     * - articleTitle: Article title from Chrome Extension storage (may be empty)
+     * - totalQuestions: Updated with the total question count from server
+     * - questionNumber: Reset to 1 for the first question
+     *
+     * If content is empty, the server will attempt to scrape the article.
+     * If OpenAI fails, the server returns mock questions as fallback.
+     *
+     * @async
+     * @returns {Promise<void>}
+     */
     async function startQuizWithContent() {
         showLoader();
         try {
@@ -343,6 +370,17 @@
                 })
             });
             const data = await response.json();
+
+            // Handle errors from server
+            if (data.error) {
+                console.error('Server error:', data.error);
+                document.getElementById('loader').innerHTML = `
+                    <p style="color: #e74c3c;">Error: ${data.error}</p>
+                    <button class="next-btn show" onclick="location.reload()">Try Again</button>
+                `;
+                return;
+            }
+
             totalQuestions = data.total_questions;
             document.getElementById('total-q').textContent = totalQuestions;
             questionNumber = 1;
